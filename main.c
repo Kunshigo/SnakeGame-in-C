@@ -36,7 +36,11 @@ void gotoxy(int x, int y)
     COORD coord = {x, y};
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
- 
+
+void hideCursor() {
+    CONSOLE_CURSOR_INFO cursorInfo = {100, FALSE};
+    SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
+} 
 
 void draw() {
     
@@ -46,6 +50,7 @@ void draw() {
     }
     printf("\n");
     gotoxy(0, 0);
+    hideCursor();
 
     for (i = 0; i < HEIGHT; i++) {
         for (j = 0; j < WIDTH; j++) {
