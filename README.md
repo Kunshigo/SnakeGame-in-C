@@ -1,2 +1,3 @@
 "# SnakeGame-in-C" 
-"# SnakeGame-in-C" 
+
+Final Project for DSA
