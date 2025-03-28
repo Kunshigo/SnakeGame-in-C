@@ -4,7 +4,7 @@
 #include <windows.h> 
 
 //game resolution
-#define WIDTH 35
+#define WIDTH 70
 #define HEIGHT 35
 #define MAX_SNAKE_LENGTH 100
 
@@ -44,13 +44,12 @@ void hideCursor() {
 
 void draw() {
     
-	gotoxy(0, 0);
+	gotoxy(0, 2);
+    hideCursor();
     for (i = 0; i < WIDTH + 2; i++) {
         printf("#");
     }
     printf("\n");
-    gotoxy(0, 0);
-    hideCursor();
 
     for (i = 0; i < HEIGHT; i++) {
         for (j = 0; j < WIDTH; j++) {
@@ -166,9 +165,8 @@ int main() {
         draw();
         input();
         logic();
-        Sleep(10);
+        Sleep(1);
     }
 
     return 0;
 }
-
