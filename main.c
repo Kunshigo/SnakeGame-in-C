@@ -1,36 +1,53 @@
-#include <conio.h> 
-#include <windows.h> 
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+#include <windows.h>
 
-
-//game resolution
+// game resolution
 #define WIDTH 70
 #define HEIGHT 35
 #define MAX_SNAKE_LENGTH 100
 
-//directions
+// directions
 #define UP 1
 #define DOWN 2
 #define LEFT 3
 #define RIGHT 4
 
-
-
 int i, j, k;
 int x, y, foodX, foodY, score;
-int snakeX[MAX_SNAKE_LENGTH], snakeY[MAX_SNAKE_LENGTH]; 
+int snakeX[MAX_SNAKE_LENGTH], snakeY[MAX_SNAKE_LENGTH];
 int snakeLength;
 int direction;
 char choice;
 
+void menu();
+
+void gameOv(){
+    printf("\t\t\t+---------+\n");
+    printf("\t\t\t|GAME OVER|\n");
+    printf("\t\t\t+---------+\n");
+    printf("Score: %d\n", score);
+    printf("Do you want to retry? (y/n): ");
+    char retry = getchar();
+    getchar();
+
+    if (retry == 'y' || retry == 'y') {
+        system("cls");
+        setup();
+    } else {
+        system("cls");
+        menu();
+    }
+}
+
 void menu()
 {
     char choice;
-    system("cls");
     printf("\nSNAKE GAME Version 1.0  ");
     printf("\n\n");
     printf("\n1. Play Game ");
     printf("\n2. Exit ");
-    
     printf("\n\n");
     printf("\nEnter Your Choice :=> ");
     choice = getchar();
@@ -39,17 +56,16 @@ void menu()
     if (choice == '1') {
         setup();
     }
-    else if(choice == '2'){
-    	return 0;
-	}
+    else if (choice == '2') {
+        exit(0);
+    }
     else {
+        system("cls");
         printf("\nInvalid Option Try Again...");
         printf("\n\n");
-        system("pause");
+        menu();
     }
 }
-
-
 
 void setup() {
     x = WIDTH / 2;
@@ -57,11 +73,11 @@ void setup() {
     foodX = rand() % WIDTH;
     foodY = rand() % HEIGHT;
     score = 0;
-    snakeLength = 1; 
-    direction = RIGHT; 
+    snakeLength = 1;
+    direction = RIGHT;
 }
 
-void gotoxy(int x, int y) 
+void gotoxy(int x, int y)
 {
     COORD coord = {x, y};
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
@@ -70,12 +86,12 @@ void gotoxy(int x, int y)
 void hideCursor() {
     CONSOLE_CURSOR_INFO cursorInfo = {100, FALSE};
     SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
-} 
+}
 
 void draw() {
-    
-	gotoxy(0, 2);
+    gotoxy(0, 0);
     hideCursor();
+
     for (i = 0; i < WIDTH + 2; i++) {
         printf("#");
     }
@@ -84,17 +100,17 @@ void draw() {
     for (i = 0; i < HEIGHT; i++) {
         for (j = 0; j < WIDTH; j++) {
             if (j == 0)
-                printf("#"); 
+                printf("#");
 
             if (i == y && j == x)
-                printf("O"); 
+                printf("O");
             else if (i == foodY && j == foodX)
                 printf("F");
             else {
                 int isBodyPart = 0;
                 for (k = 0; k < snakeLength; k++) {
                     if (snakeX[k] == j && snakeY[k] == i) {
-                        printf("o"); 
+                        printf("o");
                         isBodyPart = 1;
                     }
                 }
@@ -104,7 +120,7 @@ void draw() {
             }
 
             if (j == WIDTH - 1)
-                printf("#"); 
+                printf("#");
         }
         printf("\n");
     }
@@ -114,23 +130,25 @@ void draw() {
     }
     printf("\n");
 
+
     printf("Score: %d\n", score);
+    fflush(stdout);
 }
 
 void input() {
     if (_kbhit()) {
         switch (_getch()) {
             case 'w':
-                direction = UP;
+                if (direction != DOWN) direction = UP;
                 break;
             case 's':
-                direction = DOWN;
+                if (direction != UP) direction = DOWN;
                 break;
             case 'a':
-                direction = LEFT;
+                if (direction != RIGHT) direction = LEFT;
                 break;
             case 'd':
-                direction = RIGHT;
+                if (direction != LEFT) direction = RIGHT;
                 break;
             case 'x':
                 exit(0);
@@ -170,12 +188,12 @@ void logic() {
     }
 
     if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
-        exit(0);
+         gameOv();
     }
 
     for (i = 0; i < snakeLength; i++) {
         if (snakeX[i] == x && snakeY[i] == y) {
-            exit(0);
+            gameOv();
         }
     }
 
@@ -183,21 +201,18 @@ void logic() {
         score += 1;
         foodX = rand() % WIDTH;
         foodY = rand() % HEIGHT;
-        snakeLength++; 
+        snakeLength++;
     }
 }
 
 int main() {
-	
-	
-	menu();
-	
+    menu();
     setup();
     while (1) {
         draw();
         input();
         logic();
-        Sleep(1);
+        Sleep(10);
     }
 
     return 0;
