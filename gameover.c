@@ -3,13 +3,13 @@
 #include "snake.h"
 #include "leaderboard.h" 
 
-void gameOv(SnakeNode* head) {
+void gameOv(SnakeNode* head, int score) {
     printf("\t\t\t+---------+\n");
     printf("\t\t\t|GAME OVER|\n");	
     printf("\t\t\t+---------+\n");
-    int score;
-    printf("Score: %d\n", score); // Assuming 'score' is still globally accessible or passed
+    printf("Score: %d\n", score);
 
+    showCursor(); // Show cursor for user input
     // Get player's name
     char playerName[MAX_NAME_LENGTH];
     printf("Enter your name: ");
@@ -22,17 +22,6 @@ void gameOv(SnakeNode* head) {
     // Display the leaderboard
     displayLeaderboard();
 
-    printf("Do you want to retry? (y/n): ");
-    char retry = getchar();
-    getchar(); // Consume the newline character
-
     freeSnake(head); // Free the memory allocated for the snake
-
-    if (retry == 'y' || retry == 'Y') {
-        system("cls");
-        // setup() will be called again from main
-    } else {
-        system("cls");
-        menu();
-    }
+    hideCursor(); // Hide cursor again if returning to game
 }

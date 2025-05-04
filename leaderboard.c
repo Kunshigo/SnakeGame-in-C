@@ -69,20 +69,22 @@ void addScore(const char *name, int score) {
 
 void displayLeaderboard() {
     loadLeaderboard();
-    printf("\n\t\t+-------------+\n");
-    printf("\t\t| LEADERBOARD |\n");
-    printf("\t\t+-------------+\n");
+    printf("\n========================================\n");
+    printf("            LEADERBOARD\n");
+    printf("========================================\n");
 
     if (numScores == 0) {
-        printf("\t\t  No scores yet.\n");
+        printf("  No scores yet.\n");
     } else {
-        printf("%-3s %-20s %-5s\n", "#", "Name", "Score");
-        printf("-------------------------------\n");
+        printf("+-----+----------------------+-------+\n");
+        printf("| #   | Name                 | Score |\n");
+        printf("+-----+----------------------+-------+\n");
         for (i = 0; i < numScores; i++) {
-            printf("%-3d %-20s %-5d\n", i + 1, leaderboard[i].name, leaderboard[i].score);
+            printf("| %-3d | %-20s | %-5d |\n", i + 1, leaderboard[i].name, leaderboard[i].score);
         }
+        printf("+-----+----------------------+-------+\n");
     }
-    printf("\n");
+    printf("========================================\n");
 }
 
 void deleteScore() {

@@ -2,12 +2,27 @@
 #include <stdlib.h>
 #include <conio.h>
 #include <windows.h>
+#include <time.h>
 #include "snake.h"
- 
+
+// ANSI color codes
+#define ANSI_RESET   "\x1b[0m"
+#define ANSI_GREEN   "\x1b[32m"
+#define ANSI_YELLOW  "\x1b[33m"
+#define ANSI_RED     "\x1b[31m"
+#define ANSI_BLUE    "\x1b[34m"
+#define ANSI_CYAN    "\x1b[36m"
+#define ANSI_WHITE   "\x1b[37m"
+#define ANSI_BOLD    "\x1b[1m"
+
 const char SNAKE_HEAD_CHAR = 'O';
 const char SNAKE_BODY_CHAR = 'o';
 const char FOOD_CHAR = 'F';
 const char WALL_CHAR = '#';
+const int FRAME_DELAY = 100; // milliseconds between frames
+
+// Buffer for the game screen to reduce flicker
+char screenBuffer[HEIGHT][WIDTH + 2];
 
 void gotoxy(int x, int y) {
     COORD coord = {x, y};
@@ -17,6 +32,25 @@ void gotoxy(int x, int y) {
 void hideCursor() {
     CONSOLE_CURSOR_INFO cursorInfo = {100, FALSE};
     SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
+}
+
+void showCursor() {
+    CONSOLE_CURSOR_INFO cursorInfo = {100, TRUE};
+    SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
+}
+
+// Initialize the screen buffer
+void initScreenBuffer() {
+    int i, j;
+    for (i = 0; i < HEIGHT; i++) {
+        for (j = 0; j < WIDTH + 2; j++) {
+            if (j == 0 || j == WIDTH + 1) {
+                screenBuffer[i][j] = WALL_CHAR;
+            } else {
+                screenBuffer[i][j] = ' ';
+            }
+        }
+    }
 }
 
 SnakeNode* setup() {
@@ -51,53 +85,59 @@ SnakeNode* setup() {
 }
 
 void draw(SnakeNode* head, int foodX, int foodY, int score) {
-    gotoxy(0, 0);
-    hideCursor();
+    int i, j;
+    char output[(HEIGHT + 10) * (WIDTH * 4)];
+    char* ptr = output;
 
-    for (i = 0; i < WIDTH + 2; i++) {
-        printf("%c", WALL_CHAR);
-    }
-    printf("\n");
+    // Title banner
+    ptr += sprintf(ptr, "\n  =============================\n");
+    ptr += sprintf(ptr,   "        S N A K E   G A M E    \n");
+    ptr += sprintf(ptr,   "  =============================\n");
 
+    // Top border
+    ptr += sprintf(ptr, "+");
+    for (i = 0; i < WIDTH; i++) ptr += sprintf(ptr, "--");
+    ptr += sprintf(ptr, "+\n");
+
+    // Game area
     for (i = 0; i < HEIGHT; i++) {
+        ptr += sprintf(ptr, "|");
         for (j = 0; j < WIDTH; j++) {
-            if (j == 0)
-                printf("%c", WALL_CHAR);
-
+            char ch = ' ';
             SnakeNode* current = head;
-            int isBodyPart = 0;
             int isHead = 1;
             while (current != NULL) {
-                if (current->y == i && current->x == j) {
-                    printf("%c", isHead ? SNAKE_HEAD_CHAR : SNAKE_BODY_CHAR);
-                    isBodyPart = 1;
+                if (current->x == j && current->y == i) {
+                    ch = isHead ? 'O' : 'o';
                     break;
                 }
                 current = current->next;
                 isHead = 0;
             }
-
-            if (!isBodyPart) {
-                if (i == foodY && j == foodX)
-                    printf("%c", FOOD_CHAR);
-                else
-                    printf(" ");
-            }
-
-            if (j == WIDTH - 1)
-                printf("%c", WALL_CHAR);
+            if (foodX == j && foodY == i) ch = '@';
+            ptr += sprintf(ptr, "%c ", ch); // Add space for clarity
         }
-        printf("\n");
+        ptr += sprintf(ptr, "|\n");
     }
 
-    for (i = 0; i < WIDTH + 2; i++) {
-        printf("%c", WALL_CHAR);
-    }
-    printf("\n");
+    // Bottom border
+    ptr += sprintf(ptr, "+");
+    for (i = 0; i < WIDTH; i++) ptr += sprintf(ptr, "--");
+    ptr += sprintf(ptr, "+\n");
 
-    printf("Score: %d\n", score);
+    // Separator
+    ptr += sprintf(ptr, "----------------------------------------\n");
+
+    // Score, difficulty, and controls
+    ptr += sprintf(ptr, "Score: %d   Difficulty: %s\n", score, currentDifficulty);
+    ptr += sprintf(ptr, "Controls: W/A/S/D to move, X to exit\n");
+
+    *ptr = '\0';
+    gotoxy(0, 0);
+    fputs(output, stdout);
     fflush(stdout);
 }
+
 int lastDirection = RIGHT;
 
 int input(int currentDirection) {
@@ -142,20 +182,23 @@ SnakeNode* logic(SnakeNode* head, int direction, int* foodX, int* foodY, int* sc
             break;
     }
 
+    // Check wall collision
     if (headX < 0 || headX >= WIDTH || headY < 0 || headY >= HEIGHT) {
         *gameOver = 1;
         return head;
     }
 
-    SnakeNode* current = head;
+    // Check self collision (optimized to only check body parts)
+    SnakeNode* current = head->next;
     while (current != NULL) {
-        if (current != head && current->x == headX && current->y == headY) {
+        if (current->x == headX && current->y == headY) {
             *gameOver = 1;
             return head;
         }
         current = current->next;
     }
 
+    // Create new head
     SnakeNode* newHead = (SnakeNode*)malloc(sizeof(SnakeNode));
     if (!newHead) {
         perror("Failed to allocate memory for new snake head");
@@ -166,17 +209,25 @@ SnakeNode* logic(SnakeNode* head, int direction, int* foodX, int* foodY, int* sc
     newHead->next = head;
     head = newHead;
 
+    // Check food collision
     if (headX == *foodX && headY == *foodY) {
         (*score)++;
-        *foodX = rand() % WIDTH;
-        *foodY = rand() % HEIGHT;
+        // Generate new food position (ensuring it's not on the snake)
+        do {
+            *foodX = rand() % WIDTH;
+            *foodY = rand() % HEIGHT;
+            current = head;
+            while (current != NULL) {
+                if (current->x == *foodX && current->y == *foodY) {
+                    *foodX = -1; // Force regeneration
+                    break;
+                }
+                current = current->next;
+            }
+        } while (*foodX == -1);
     } else {
+        // Remove tail
         SnakeNode* temp = head;
-        if (temp == NULL) return NULL;
-        if (temp->next == NULL) {
-            free(temp);
-            return NULL; // snake died? should not happen in normal gameplay
-        }
         while (temp->next->next != NULL) {
             temp = temp->next;
         }

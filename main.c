@@ -5,49 +5,64 @@
 #include "snake.h"
 
 int main() {
-    srand(time(NULL));
+    int currentDirection;
+    int gameOver;
+    int score;
+    int foodX, foodY;
+    SnakeNode* snakeHead;
+    char playAgain = 'y';
+    DWORD frameStart, frameEnd, frameElapsed, frameDelayLocal;
+
+    srand((unsigned int)time(NULL));
     menu();
+    hideCursor();
 
-    SnakeNode* snakeHead = setup();
-    int foodX = rand() % WIDTH;
-    int foodY = rand() % HEIGHT;
-    int score = 0;
-    int currentDirection = RIGHT; // Keep track of the current direction
-    int gameOver = 0;
+    while (playAgain == 'y' || playAgain == 'Y') {
+        setDifficulty();
+        snakeHead = setup();
+        foodX = rand() % WIDTH;
+        foodY = rand() % HEIGHT;
+        score = 0;
+        currentDirection = RIGHT;
+        gameOver = 0;
 
-    while (!gameOver) {
-        draw(snakeHead, foodX, foodY, score);
+        while (!gameOver) {
+            frameStart = GetTickCount();
 
-        if (_kbhit()) {
-            int newDirection = _getch();
-            switch (newDirection) {
-                case 'w':
-                    if (currentDirection != DOWN) currentDirection = UP;
-                    break;
-                case 's':
-                    if (currentDirection != UP) currentDirection = DOWN;
-                    break;
-                case 'a':
-                    if (currentDirection != RIGHT) currentDirection = LEFT;
-                    break;
-                case 'd':
-                    if (currentDirection != LEFT) currentDirection = RIGHT;
-                    break;
-                case 'x':
-                    exit(0);
+            // Input
+            if (_kbhit()) {
+                int newDirection = _getch();
+                switch (newDirection) {
+                    case 'w': if (currentDirection != DOWN) currentDirection = UP; break;
+                    case 's': if (currentDirection != UP) currentDirection = DOWN; break;
+                    case 'a': if (currentDirection != RIGHT) currentDirection = LEFT; break;
+                    case 'd': if (currentDirection != LEFT) currentDirection = RIGHT; break;
+                    case 'x': gameOver = 1; break;
+                }
             }
+
+            snakeHead = logic(snakeHead, currentDirection, &foodX, &foodY, &score, &gameOver);
+            draw(snakeHead, foodX, foodY, score);
+
+            // Frame timing
+            frameEnd = GetTickCount();
+            frameElapsed = frameEnd - frameStart;
+            frameDelayLocal = frameDelay > frameElapsed ? frameDelay - frameElapsed : 1;
+            Sleep(frameDelayLocal);
         }
 
-        // Adjust sleep based on the *current* direction
-        if (currentDirection == UP || currentDirection == DOWN) {
-            Sleep(30);
-        } else {
-            Sleep(10);
-        }
+        gameOv(snakeHead, score);
 
-        snakeHead = logic(snakeHead, currentDirection, &foodX, &foodY, &score, &gameOver);
+        printf("Do you want to play again? (y/n): ");
+        playAgain = getchar();
+        getchar();
+        system("cls");
+        if (playAgain != 'y' && playAgain != 'Y') {
+            menu();
+            playAgain = 'y'; // So the loop can continue if the user chooses to play again from the menu
+        }
     }
 
-    gameOv(snakeHead);
+    showCursor();
     return 0;
 }
